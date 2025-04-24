@@ -37,9 +37,9 @@ jobs:
 
       - name: Push Docker image to ECR
         run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <your-ecr-repo>
-          docker tag quickcv-backend:latest <your-ecr-repo>:latest
-          docker push <your-ecr-repo>:latest
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
+          docker tag quickcv-backend:latest 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
+          docker push 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
 
       - name: Update ECS Service
         run: |

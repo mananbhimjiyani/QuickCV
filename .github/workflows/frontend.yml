@@ -47,6 +47,60 @@ jobs:
         run: |
           aws s3 sync dist/ s3://quickcv-frontend-dev --delete
 
+      - name: Create CloudFront Distribution (if not exists)
+        id: create-cloudfront
+        run: |
+          # Check if CloudFront distribution already exists
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[0].DomainName=='quickcv-frontend-dev.s3.amazonaws.com'].Id" --output text)
+
+          if [ -z "$DISTRIBUTION_ID" ]; then
+            echo "Creating new CloudFront distribution..."
+            DISTRIBUTION_CONFIG='{
+              "CallerReference": "quickcv-frontend-dev",
+              "Origins": {
+                "Quantity": 1,
+                "Items": [
+                  {
+                    "Id": "S3-quickcv-frontend-dev",
+                    "DomainName": "quickcv-frontend-dev.s3.amazonaws.com",
+                    "S3OriginConfig": {
+                      "OriginAccessIdentity": ""
+                    }
+                  }
+                ]
+              },
+              "DefaultCacheBehavior": {
+                "TargetOriginId": "S3-quickcv-frontend-dev",
+                "ViewerProtocolPolicy": "redirect-to-https",
+                "AllowedMethods": {
+                  "Quantity": 2,
+                  "Items": ["GET", "HEAD"]
+                },
+                "CachedMethods": {
+                  "Quantity": 2,
+                  "Items": ["GET", "HEAD"]
+                },
+                "ForwardedValues": {
+                  "QueryString": false,
+                  "Cookies": {
+                    "Forward": "none"
+                  }
+                },
+                "MinTTL": 0
+              },
+              "Comment": "",
+              "Enabled": true
+            }'
+
+            DISTRIBUTION_ID=$(aws cloudfront create-distribution --distribution-config "$DISTRIBUTION_CONFIG" --query "Distribution.Id" --output text)
+            echo "New CloudFront distribution created with ID: $DISTRIBUTION_ID"
+          else
+            echo "CloudFront distribution already exists with ID: $DISTRIBUTION_ID"
+          fi
+
+          # Export the distribution ID for use in subsequent steps
+          echo "DISTRIBUTION_ID=$DISTRIBUTION_ID" >> $GITHUB_ENV
+
       - name: Invalidate CloudFront Cache
         run: |
-          aws cloudfront create-invalidation --distribution-id <cloudfront-id> --paths "/*"
+          aws cloudfront create-invalidation --distribution-id ${{ env.DISTRIBUTION_ID }} --paths "/*"
