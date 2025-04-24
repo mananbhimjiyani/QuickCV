@@ -6,48 +6,26 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy-backend:
     runs-on: ubuntu-latest
-    env:
-      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-      R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
-      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
-          aws-region: us-east-1
+          python-version: '3.12'
 
-      - name: Build Docker image
+      - name: Install dependencies
         run: |
-          docker build --build-arg R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID \
-                       --build-arg R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY \
-                       --build-arg R2_ENDPOINT_URL=$R2_ENDPOINT_URL \
-                       --build-arg R2_BUCKET_NAME=$R2_BUCKET_NAME \
-                       --build-arg GOOGLE_API_KEY=$GOOGLE_API_KEY \
-                       -t quickcv-backend ./backend
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r backend/requirements.txt
 
-      - name: Push Docker image to ECR
+      - name: Run the application
         run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 376129850308.dkr.ecr.us-east-1.amazonaws.com
-          docker tag quickcv-backend:latest 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
-          docker push 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
-
-      - name: Deploy to Kubernetes
-        run: |
-          # Update the Kubernetes deployment with the latest image
-          kubectl set image deployment/quickcv-backend quickcv-backend=376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
-
-          # Restart the deployment to apply changes
-          kubectl rollout restart deployment quickcv-backend
-
-          # Verify the rollout status
-          kubectl rollout status deployment quickcv-backend
+          source .venv/bin/activate
+          uvicorn backend.main:app --host 0.0.0.0 --port 8000
