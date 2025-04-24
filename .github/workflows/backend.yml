@@ -9,6 +9,9 @@ jobs:
   deploy-backend:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: us-east-1 # Set the AWS region here
+
     steps:
       # Step 1: Checkout code
       - name: Checkout code
@@ -37,6 +40,8 @@ jobs:
       - name: Log in to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          region: ${{ env.AWS_REGION }} # Use the AWS region from the environment variable
 
       # Step 6: Tag and push Docker image to ECR
       - name: Push Docker image to ECR
