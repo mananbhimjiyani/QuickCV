@@ -37,10 +37,17 @@ jobs:
 
       - name: Push Docker image to ECR
         run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 376129850308.dkr.ecr.us-east-1.amazonaws.com
           docker tag quickcv-backend:latest 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
           docker push 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
 
-      - name: Update ECS Service
+      - name: Deploy to Kubernetes
         run: |
-          aws ecs update-service --cluster quickcv-backend-cluster-dev --service quickcv-backend-service-dev --force-new-deployment
+          # Update the Kubernetes deployment with the latest image
+          kubectl set image deployment/quickcv-backend quickcv-backend=376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
+
+          # Restart the deployment to apply changes
+          kubectl rollout restart deployment quickcv-backend
+
+          # Verify the rollout status
+          kubectl rollout status deployment quickcv-backend
