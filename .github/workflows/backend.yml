@@ -10,14 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Step 2: Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
 
+      # Step 3: Install dependencies
       - name: Install dependencies
         run: |
           python -m venv .venv
@@ -25,7 +28,36 @@ jobs:
           pip install --upgrade pip
           pip install -r backend/requirements.txt
 
-      - name: Run the application
+      # Step 4: Build Docker image
+      - name: Build Docker image
         run: |
-          source .venv/bin/activate
-          uvicorn backend.main:app --host 0.0.0.0 --port 8000
+          docker build -t quickcv-backend ./backend
+
+      # Step 5: Log in to Amazon ECR
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # Step 6: Tag and push Docker image to ECR
+      - name: Push Docker image to ECR
+        run: |
+          # Extract the ECR repository URI
+          ECR_REPOSITORY_URI=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY_NAME }}
+          
+          # Tag the Docker image
+          docker tag quickcv-backend:latest $ECR_REPOSITORY_URI:latest
+          
+          # Push the Docker image to ECR
+          docker push $ECR_REPOSITORY_URI:latest
+
+      # Step 7: Deploy to Kubernetes
+      - name: Deploy to Kubernetes
+        run: |
+          # Update the deployment with the latest image
+          kubectl set image deployment/quickcv-backend quickcv-backend=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
+          
+          # Restart the deployment to apply changes
+          kubectl rollout restart deployment quickcv-backend
+          
+          # Verify the rollout status
+          kubectl rollout status deployment quickcv-backend
