@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quickcv-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: quickcv-frontend
+  template:
+    metadata:
+      labels:
+        app: quickcv-frontend
+    spec:
+      containers:
+      - name: quickcv-frontend
+        image: 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-frontend:latest
+        ports:
+          - containerPort: 80

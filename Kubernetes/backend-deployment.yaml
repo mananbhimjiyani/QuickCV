@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quickcv-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: quickcv-backend
+  template:
+    metadata:
+      labels:
+        app: quickcv-backend
+    spec:
+      containers:
+      - name: quickcv-backend
+        image: 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
+        ports:
+        - containerPort: 8000
+      imagePullSecrets:
+      - name: ecr-secret

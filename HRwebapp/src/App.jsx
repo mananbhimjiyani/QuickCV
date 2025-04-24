@@ -18,7 +18,7 @@ function App() {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("https://quickcv.onrender.com/api/upload_cv", formData, {
+      const response = await axios.post("acb726f98354a4a128cbc12edd471f6b-836054913.us-east-1.elb.amazonaws.com", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
