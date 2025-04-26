@@ -106,7 +106,7 @@ jobs:
 
       - name: Invalidate CloudFront Cache
         run: |
-          if [ -n "${{ env.DISTRIBUTION_ID }}" ]; then
+          if [ -n "${{ env.DISTRIBUTION_ID }}" ] && [ "${{ env.DISTRIBUTION_ID }}" != "None" ]; then
             aws cloudfront create-invalidation --distribution-id ${{ env.DISTRIBUTION_ID }} --paths "/*"
           else
             echo "CloudFront distribution ID is not set. Skipping cache invalidation."
