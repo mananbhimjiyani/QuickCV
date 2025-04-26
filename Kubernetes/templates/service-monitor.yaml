@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: quickcv-monitor
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: quickcv-backend
+  endpoints:
+  - port: http
+    interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: quickcv-frontend-monitor
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: quickcv-frontend
+  endpoints:
+  - port: http
+    interval: 30s 

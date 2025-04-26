@@ -1,0 +1,4 @@
+apiVersion: v2
+name: quickcv
+version: 0.1.0
+description: A Helm chart for QuickCV frontend and backend 

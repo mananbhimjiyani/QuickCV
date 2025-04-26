@@ -25,7 +25,7 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm install
 
       - name: Build project
         run: |
@@ -108,3 +108,20 @@ jobs:
           else
             echo "CloudFront distribution ID is not set. Skipping cache invalidation."
           fi
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        working-directory: HRwebapp/terraform/dev
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: HRwebapp/terraform/dev
+        run: terraform plan
+
+      - name: Terraform Apply (auto-approve for dev)
+        working-directory: HRwebapp/terraform/dev
+        run: terraform apply -auto-approve

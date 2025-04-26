@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quickcv-backend
+  labels:
+    app: quickcv-backend
+    track: {{ .Values.backend.track | default "stable" }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      app: quickcv-backend
+      track: {{ .Values.backend.track | default "stable" }}
+  template:
+    metadata:
+      labels:
+        app: quickcv-backend
+        track: {{ .Values.backend.track | default "stable" }}
+    spec:
+      containers:
+      - name: quickcv-backend
+        image: {{ .Values.backend.image }}
+        resources:
+{{ toYaml .Values.backend.resources | indent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5 

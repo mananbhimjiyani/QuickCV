@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: quickcv-backend
 spec:
-  replicas: 2
+  replicas: 2 # kustomize can patch this
   selector:
     matchLabels:
       app: quickcv-backend
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: quickcv-backend
-        image: 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
+        image: REPLACE_IMAGE # kustomize will patch this
         ports:
         - containerPort: 8000
       imagePullSecrets:

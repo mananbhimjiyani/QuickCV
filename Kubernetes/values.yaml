@@ -1,0 +1,20 @@
+backend:
+  image: 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:prod
+  replicas: 3
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+frontend:
+  image: 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-frontend:prod
+  replicas: 3
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi 

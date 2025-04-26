@@ -1,0 +1,8 @@
+resources:
+  - backend-deployment.yaml
+  - backend-service.yaml
+  - frontend-deployment.yaml
+  - frontend-service.yaml
+patches:
+  - path: overlay-dev.yaml
+  - path: overlay-prod.yaml 

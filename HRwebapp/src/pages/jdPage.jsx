@@ -35,7 +35,7 @@ const JdPage = () => {
       formData.append("cv_file", cvFile);
 
       const response = await fetch(
-        "https://quickcv.onrender.com/api/compare_cv_jd",
+        "http://acb726f98354a4a128cbc12edd471f6b-836054913.us-east-1.elb.amazonaws.com/api/compare_cv_jd",
         {
           method: "POST",
           body: formData,

@@ -24,8 +24,8 @@ This project is an AI-powered HR Tech web application that simplifies the recrui
 1. **Frontend on Vercel**:  
    `https://quickcvfrontend-git-main-kev0-4s-projects.vercel.app/`
 
-2. **Backend on Render**:  
-   `https://quickcv.onrender.com`
+2. **Backend on Kubernetes (AWS EKS ELB)**:  
+   `http://acb726f98354a4a128cbc12edd471f6b-836054913.us-east-1.elb.amazonaws.com`
 
 ---
 
@@ -70,10 +70,10 @@ This project is an AI-powered HR Tech web application that simplifies the recrui
 - `http://127.0.0.1:8000/docs`
 
 #### ☁️ Hosted URLs:
-- `https://quickcv.onrender.com/api/get_details`
-- `https://quickcv.onrender.com/api/upload_cv`
-- `https://quickcv.onrender.com/api/compare_cv_jd`
-- `https://quickcv.onrender.com/docs`
+- `http://acb726f98354a4a128cbc12edd471f6b-836054913.us-east-1.elb.amazonaws.com/api/get_details`
+- `http://acb726f98354a4a128cbc12edd471f6b-836054913.us-east-1.elb.amazonaws.com/api/upload_cv`
+- `http://acb726f98354a4a128cbc12edd471f6b-836054913.us-east-1.elb.amazonaws.com/api/compare_cv_jd`
+- `http://acb726f98354a4a128cbc12edd471f6b-836054913.us-east-1.elb.amazonaws.com/docs`
 
 > **Tech Stack:** FastAPI + Uvicorn
 
