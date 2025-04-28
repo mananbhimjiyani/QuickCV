@@ -31,8 +31,8 @@ const JdPage = () => {
 
     try {
       const formData = new FormData();
-      formData.append("jd_file", jdFile);
       formData.append("cv_file", cvFile);
+      formData.append("jd_file", jdFile);
 
       const response = await fetch(
         "http://acb726f98354a4a128cbc12edd471f6b-836054913.us-east-1.elb.amazonaws.com/api/compare_cv_jd",

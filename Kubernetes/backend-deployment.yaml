@@ -14,8 +14,32 @@ spec:
     spec:
       containers:
       - name: quickcv-backend
-        image: REPLACE_IMAGE # kustomize will patch this
+        image: 376129850308.dkr.ecr.us-east-1.amazonaws.com/quickcv-backend:latest
         ports:
         - containerPort: 8000
-      imagePullSecrets:
-      - name: ecr-secret
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: quickcv-backend-secret
+                key: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: quickcv-backend-secret
+                key: AWS_SECRET_ACCESS_KEY
+          - name: GOOGLE_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: quickcv-backend-secret
+                key: GOOGLE_API_KEY
+          - name: AWS_REGION
+            valueFrom:
+              configMapKeyRef:
+                name: quickcv-backend-config
+                key: AWS_REGION
+          - name: S3_BUCKET_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: quickcv-backend-config
+                key: S3_BUCKET_NAME

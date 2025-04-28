@@ -1,62 +1,26 @@
 import boto3
 import os
-from botocore.exceptions import NoCredentialsError
 from dotenv import load_dotenv
 
 load_dotenv()
 
-def upload_jd_to_r2(file_path):
-    """
-    Uploads a Job Description PDF to Cloudflare R2 and names it as jd(n).pdf.
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = os.getenv("AWS_REGION")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
-    :param file_path: Path to the JD PDF to be uploaded.
-    :return: URL of the uploaded JD or None if upload failed.
-    """
-    access_key_id = os.getenv("R2_ACCESS_KEY_ID")
-    secret_access_key = os.getenv("R2_SECRET_ACCESS_KEY")
-    endpoint_url = os.getenv("R2_ENDPOINT_URL")
-    bucket_name = os.getenv("R2_BUCKET_NAME")
-    public_base_url = "https://pub-bd4a6e96fbe74d0d85b3ad6a30670258.r2.dev"
+s3_client = boto3.client(
+    "s3",
+    region_name=AWS_REGION,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+)
 
-    print("📦 ENV loaded")
-    print("Access Key:", "✅" if access_key_id else "❌ MISSING")
-    print("Secret Key:", "✅" if secret_access_key else "❌ MISSING")
-    print("Endpoint:", endpoint_url)
-    print("Bucket:", bucket_name)
-
-    if not os.path.exists(file_path):
-        print("❌ File does not exist:", file_path)
-        return None
-
-    s3_client = boto3.client(
-        's3',
-        endpoint_url=endpoint_url,
-        aws_access_key_id=access_key_id,
-        aws_secret_access_key=secret_access_key
-    )
-
+def upload_jd_to_s3(local_file_path, s3_key):
     try:
-        print("📁 Listing existing objects to find next jd(n)...")
-        existing_objects = s3_client.list_objects_v2(Bucket=bucket_name)
-        jd_count = 0
-        if 'Contents' in existing_objects:
-            jd_count = sum(1 for obj in existing_objects['Contents'] if obj['Key'].startswith('jd('))
-        jd_file_name = f"jd({jd_count + 1}).pdf"
-        print(f"📝 New JD name: {jd_file_name}")
-
-        print("⬆️ Uploading to R2...")
-        s3_client.upload_file(file_path, bucket_name, jd_file_name)
-
-        public_url = f"{public_base_url}/{jd_file_name}"
-        print("✅ Upload successful:", public_url)
-
-        return public_url
-
-    except FileNotFoundError:
-        print("❌ The file was not found.")
-    except NoCredentialsError:
-        print("❌ Credentials not available.")
+        s3_client.upload_file(local_file_path, S3_BUCKET_NAME, s3_key)
+        s3_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{s3_key}"
+        return s3_url
     except Exception as e:
-        print(f"❌ An unexpected error occurred: {e}")
-
-    return None
+        print(f"Error uploading JD to S3: {e}")
+        return None

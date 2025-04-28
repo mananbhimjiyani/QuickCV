@@ -6,26 +6,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID")
-R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY")
-R2_ENDPOINT_URL = os.getenv("R2_ENDPOINT_URL")
-R2_BUCKET_NAME = "data"
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = os.getenv("AWS_REGION")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
-r2_client = boto3.client(
+s3_client = boto3.client(
     "s3",
-    endpoint_url=R2_ENDPOINT_URL,
-    aws_access_key_id=R2_ACCESS_KEY_ID,
-    aws_secret_access_key=R2_SECRET_ACCESS_KEY,
+    region_name=AWS_REGION,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
 )
 
 def update_jd_excel(jd_name: str, jd_url: str):
     try:
-        file_obj = r2_client.get_object(Bucket=R2_BUCKET_NAME, Key="jd_tracking.xlsx")
+        file_obj = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key="jd_tracking.xlsx")
         file_content = file_obj["Body"].read()
         df = pd.read_excel(BytesIO(file_content))
         print("update ExcelJD try block")
         print(df)
-    except r2_client.exceptions.NoSuchKey:
+    except s3_client.exceptions.NoSuchKey:
         df = pd.DataFrame(columns=["JD Name", "R2 URL"])
 
     new_entry = pd.DataFrame({
@@ -40,10 +40,10 @@ def update_jd_excel(jd_name: str, jd_url: str):
         df.to_excel(writer, index=False, sheet_name="JDs")
     output.seek(0)
 
-    r2_client.put_object(
-        Bucket=R2_BUCKET_NAME,
+    s3_client.put_object(
+        Bucket=S3_BUCKET_NAME,
         Key="jd_tracking.xlsx",
-        Body=output,
+        Body=output.getvalue(),
         ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 

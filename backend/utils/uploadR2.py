@@ -1,47 +1,38 @@
 import boto3
-from botocore.exceptions import NoCredentialsError
 import os
 from dotenv import load_dotenv
 
-
-
 load_dotenv()
 
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = os.getenv("AWS_REGION")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
-def upload_to_r2(file_name, email):
-    """
-    Uploads a local file to Cloudflare R2 with a renamed file based on the candidate's email.
+s3_client = boto3.client(
+    "s3",
+    region_name=AWS_REGION,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+)
 
-    :param file_name: Path to the local file to upload.
-    :param email: Email of the candidate to create a unique file name.
-    :return: URL of the uploaded file or None if upload failed.
-    """
-    access_key_id = os.getenv("R2_ACCESS_KEY_ID")
-    secret_access_key = os.getenv("R2_SECRET_ACCESS_KEY")
-    endpoint_url = os.getenv("R2_ENDPOINT_URL")
-    bucket_name = os.getenv("R2_BUCKET_NAME")
-
-    object_name = f"{email}.pdf"
-
-    s3_client = boto3.client(
-        's3',
-        endpoint_url=endpoint_url,
-        aws_access_key_id=access_key_id,
-        aws_secret_access_key=secret_access_key,
-        
-    )
-
+def upload_to_s3(local_file_path, s3_key):
     try:
-        s3_client.upload_file(file_name, bucket_name, object_name)
-        # Return the public URL
-        return f"https://pub-bd4a6e96fbe74d0d85b3ad6a30670258.r2.dev/{object_name}"
-    except FileNotFoundError:
-        print("The file was not found.")
-    except NoCredentialsError:
-        print("Credentials not available.")
+        s3_client.upload_file(local_file_path, S3_BUCKET_NAME, s3_key)
+        # Return a pre-signed URL for private access
+        uploaded_url = generate_presigned_url(S3_BUCKET_NAME, s3_key)
+        return uploaded_url
     except Exception as e:
-        print(f"An error occurred: {e}")
-    return None
+        print(f"Error uploading to S3: {e}")
+        return None
+
+def generate_presigned_url(bucket, key, expires=3600):
+    s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "us-east-1"))
+    return s3.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": bucket, "Key": key},
+        ExpiresIn=expires
+    )
 
 # if __name__ == "__main__":
 #     local_file = "test.pdf"  # Local file name

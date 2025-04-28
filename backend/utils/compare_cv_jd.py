@@ -4,8 +4,8 @@ import httpx
 import google.generativeai as genai
 from fastapi import UploadFile
 from dotenv import load_dotenv
-from .uploadR2 import upload_to_r2
-from .upload_jd_tor2 import upload_jd_to_r2
+from .uploadR2 import upload_to_s3
+from .upload_jd_tor2 import upload_jd_to_s3
 from .updateExcel import update_excel
 from .updateJdExcel import update_jd_excel
 import logging
@@ -43,9 +43,9 @@ async def handle_cv_upload(file: UploadFile) -> Tuple[Optional[str], Optional[st
             with open(temp_path, "wb") as f:
                 f.write(await file.read())
 
-            # Upload to R2
-            r2_url = upload_to_r2(temp_path, f"{email}.pdf")
-            return email, r2_url
+            # Upload to S3
+            s3_url = upload_to_s3(temp_path, f"{email}.pdf")
+            return email, s3_url
         finally:
             # Clean up temp file
             if os.path.exists(temp_path):
@@ -66,8 +66,8 @@ async def handle_jd_upload(file: UploadFile) -> Optional[str]:
             with open(temp_path, "wb") as f:
                 f.write(await file.read())
 
-            # Upload to R2
-            return upload_jd_to_r2(temp_path)
+            # Upload to S3
+            return upload_jd_to_s3(temp_path)
         finally:
             # Clean up temp file
             if os.path.exists(temp_path):
