@@ -62,4 +62,4 @@ HRwebapp/dist/
 backend/dist/
 
 # Ignore backend build artifacts
-backend/__pycache__/
+backend/__pycache__/.env
