@@ -16,12 +16,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
-          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
@@ -38,8 +38,13 @@ jobs:
 
       - name: Terraform Apply (auto-approve for dev)
         working-directory: terraform
-        run: terraform apply -auto-approve
-        # For production, add manual approval step before this
+        run: |
+            terraform import aws_s3_bucket.app_bucket quickcv-frontend-dev || true
+            terraform import aws_iam_user.app_user quickcv-app-user || true
+            terraform import aws_dynamodb_table.cv_tracking cv_tracking || true
+            terraform import aws_dynamodb_table.jd_tracking jd_tracking || true
+            
+            terraform apply -auto-approve
 
   # 2. Build and Push Docker Images
   build-and-push:
@@ -50,7 +55,7 @@ jobs:
       ECR_REPO_FRONTEND: ${{ secrets.ECR_REPO_FRONTEND }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
-      AWS_REGION: us-east-1
+      AWS_REGION: ${{ secrets.AWS_REGION }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -87,7 +92,7 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
-      AWS_REGION: us-east-1
+      AWS_REGION: ${{ secrets.AWS_REGION }}
       EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
     steps:
       - name: Checkout code
