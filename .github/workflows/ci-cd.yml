@@ -1,0 +1,132 @@
+name: Monorepo CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  # 1. Infrastructure as Code (Terraform)
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan
+
+      - name: Terraform Apply (auto-approve for dev)
+        working-directory: terraform
+        run: terraform apply -auto-approve
+        # For production, add manual approval step before this
+
+  # 2. Build and Push Docker Images
+  build-and-push:
+    needs: terraform
+    runs-on: ubuntu-latest
+    env:
+      ECR_REPO_BACKEND: ${{ secrets.ECR_REPO_BACKEND }}
+      ECR_REPO_FRONTEND: ${{ secrets.ECR_REPO_FRONTEND }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+      AWS_REGION: us-east-1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Backend Docker
+      - name: Build backend Docker image
+        run: docker build -t backend:latest ./backend
+
+      - name: Tag backend Docker image
+        run: docker tag backend:latest ${{ secrets.ECR_REPO_BACKEND }}:latest
+
+      # Frontend Docker
+      - name: Build frontend Docker image
+        run: docker build -t frontend:latest ./HRwebapp
+
+      - name: Tag frontend Docker image
+        run: docker tag frontend:latest ${{ secrets.ECR_REPO_FRONTEND }}:latest
+
+      # Login to ECR
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Push images
+      - name: Push backend Docker image
+        run: docker push ${{ secrets.ECR_REPO_BACKEND }}:latest
+
+      - name: Push frontend Docker image
+        run: docker push ${{ secrets.ECR_REPO_FRONTEND }}:latest
+
+  # 3. Deploy to Kubernetes
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+      AWS_REGION: us-east-1
+      EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up kubectl
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+
+      # Deploy backend with kubectl (YAML or Kustomize)
+      - name: Deploy backend manifests
+        run: kubectl apply -f Kubernetes/backend-deployment.yaml
+
+      - name: Deploy backend service
+        run: kubectl apply -f Kubernetes/backend-service.yaml
+
+      # Deploy frontend with kubectl (YAML or Kustomize)
+      - name: Deploy frontend manifests
+        run: kubectl apply -f Kubernetes/frontend-deployment.yaml
+
+      - name: Deploy frontend service
+        run: kubectl apply -f Kubernetes/frontend-service.yaml
+
+      # Optionally, use Helm if you have charts
+      - name: Install Helm
+        run: |
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          chmod 700 get_helm.sh
+          ./get_helm.sh
+
+      - name: Deploy with Helm (optional)
+        run: |
+          helm upgrade --install quickcv-backend ./Kubernetes --set image.repository=${{ secrets.ECR_REPO_BACKEND }} --set image.tag=latest
+          helm upgrade --install quickcv-frontend ./Kubernetes --set image.repository=${{ secrets.ECR_REPO_FRONTEND }} --set image.tag=latest
+
+      # Restart deployments to pick up new images
+      - name: Restart backend deployment
+        run: kubectl rollout restart deployment/quickcv-backend
+
+      - name: Restart frontend deployment
+        run: kubectl rollout restart deployment/quickcv-frontend
+
+      # Verify rollout
+      - name: Verify backend rollout
+        run: kubectl rollout status deployment/quickcv-backend
+
+      - name: Verify frontend rollout
+        run: kubectl rollout status deployment/quickcv-frontend
