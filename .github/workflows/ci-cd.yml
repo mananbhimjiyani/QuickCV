@@ -117,18 +117,6 @@ jobs:
       - name: Deploy frontend service
         run: kubectl apply -f Kubernetes/frontend-service.yaml
 
-      # Optionally, use Helm if you have charts
-      - name: Install Helm
-        run: |
-          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-          chmod 700 get_helm.sh
-          ./get_helm.sh
-
-      - name: Deploy with Helm (optional)
-        run: |
-          helm upgrade --install quickcv-backend ./Kubernetes --set image.repository=${{ secrets.ECR_REPO_BACKEND }} --set image.tag=latest
-          helm upgrade --install quickcv-frontend ./Kubernetes --set image.repository=${{ secrets.ECR_REPO_FRONTEND }} --set image.tag=latest
-
       # Restart deployments to pick up new images
       - name: Restart backend deployment
         run: kubectl rollout restart deployment/quickcv-backend
